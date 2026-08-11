@@ -10,6 +10,7 @@ type Props = {
   title: string;
   body?: string;
   confirmLabel: string;
+  cancelLabel?: string;
   onConfirm: () => void;
   onCancel: () => void;
 };
@@ -19,6 +20,7 @@ export function ConfirmSheet({
   title,
   body,
   confirmLabel,
+  cancelLabel = 'Cancel',
   onConfirm,
   onCancel,
 }: Props) {
@@ -45,7 +47,7 @@ export function ConfirmSheet({
           ) : null}
           <Button label={confirmLabel} onPress={onConfirm} style={styles.btn} />
           <Button
-            label="Cancel"
+            label={cancelLabel}
             variant="ghost"
             onPress={onCancel}
             style={styles.btn}

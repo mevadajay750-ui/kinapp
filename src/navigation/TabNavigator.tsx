@@ -4,7 +4,7 @@ import {Home, UtensilsCrossed, ListChecks, TrendingUp} from 'lucide-react-native
 import {colors} from '../theme';
 import {TodayScreen} from '../screens/tabs/TodayScreen';
 import {MealsStack} from './MealsStack';
-import {HabitsScreen} from '../screens/tabs/HabitsScreen';
+import {HabitsStack} from './HabitsStack';
 import {ProgressScreen} from '../screens/tabs/ProgressScreen';
 
 export type TabParamList = {
@@ -57,7 +57,7 @@ export function TabNavigator() {
       />
       <Tab.Screen
         name="Habits"
-        component={HabitsScreen}
+        component={HabitsStack}
         options={{
           tabBarIcon: ({color, size}) => (
             <ListChecks color={color} size={size - 2} strokeWidth={1.8} />

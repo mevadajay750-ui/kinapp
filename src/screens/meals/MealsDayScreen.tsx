@@ -1,19 +1,15 @@
 import React, {useEffect, useMemo, useState, useCallback} from 'react';
 import {View, Pressable, StyleSheet, ScrollView} from 'react-native';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {ChevronLeft, ChevronRight, Plus} from 'lucide-react-native';
+import {Plus} from 'lucide-react-native';
 import {Screen} from '../../components/Screen';
 import {Text} from '../../components/Text';
+import {DateStrip} from '../../components/DateStrip';
 import {ConfirmSheet} from '../../components/meals/ConfirmSheet';
 import {colors, spacing, radius} from '../../theme';
 import {useAuth} from '../../hooks/useAuth';
 import {useProfile} from '../../hooks/useProfile';
-import {
-  localDateKey,
-  addDays,
-  isToday,
-  formatDateLabel,
-} from '../../lib/dates';
+import {localDateKey} from '../../lib/dates';
 import {
   subscribeToDay,
   deleteMealEntry,
@@ -66,7 +62,6 @@ export function MealsDayScreen({navigation}: Props) {
   const [pendingDelete, setPendingDelete] = useState<MealEntry | null>(null);
 
   const target = profile?.dailyKcalTarget ?? 1600;
-  const today = isToday(dateKey);
 
   useEffect(() => {
     if (!user) {
@@ -127,43 +122,7 @@ export function MealsDayScreen({navigation}: Props) {
         style={styles.flex}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scroll}>
-        <View style={styles.dateStrip}>
-          <Pressable
-            onPress={() => setDateKey(k => addDays(k, -1))}
-            hitSlop={12}
-            accessibilityRole="button"
-            accessibilityLabel="Previous day">
-            <ChevronLeft size={22} color={colors.plum} strokeWidth={1.8} />
-          </Pressable>
-          <View style={styles.dateCenter}>
-            <Text variant="h2" color="plum" style={styles.dateLabel}>
-              {formatDateLabel(dateKey)}
-            </Text>
-            {!today ? (
-              <Pressable
-                onPress={() => setDateKey(localDateKey())}
-                hitSlop={8}
-                accessibilityRole="button">
-                <Text variant="small" color="marigold">
-                  Back to today
-                </Text>
-              </Pressable>
-            ) : null}
-          </View>
-          <Pressable
-            onPress={() => {
-              if (!today) {
-                setDateKey(k => addDays(k, 1));
-              }
-            }}
-            disabled={today}
-            hitSlop={12}
-            accessibilityRole="button"
-            accessibilityLabel="Next day"
-            style={{opacity: today ? 0.35 : 1}}>
-            <ChevronRight size={22} color={colors.plum} strokeWidth={1.8} />
-          </Pressable>
-        </View>
+        <DateStrip dateKey={dateKey} onChange={setDateKey} />
 
         <View style={styles.totalCard}>
           <View style={styles.totalRow}>
@@ -292,20 +251,6 @@ const styles = StyleSheet.create({
   },
   scroll: {
     paddingBottom: spacing.xxxl,
-  },
-  dateStrip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: spacing.xl,
-    marginBottom: spacing.lg,
-  },
-  dateCenter: {
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  dateLabel: {
-    textAlign: 'center',
   },
   totalCard: {
     backgroundColor: colors.cream,

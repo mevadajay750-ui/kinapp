@@ -5,9 +5,11 @@ import {
   onSnapshot,
   serverTimestamp,
   updateDoc,
+  writeBatch,
 } from 'firebase/firestore';
 import {useAuth} from '../hooks/useAuth';
 import {db} from '../lib/firebase';
+import {seedDefaultHabitsIntoBatch} from '../lib/habits';
 import {
   createUserProfile,
   OnboardingData,
@@ -131,7 +133,8 @@ export function ProfileProvider({children}: {children: React.ReactNode}) {
       if (!db || !user) {
         notConfigured();
       }
-      await updateDoc(doc(db, 'users', user.uid), {
+      const batch = writeBatch(db);
+      batch.update(doc(db, 'users', user.uid), {
         name: data.name,
         startWeightKg: data.startWeightKg,
         goalWeightKg: data.goalWeightKg,
@@ -140,6 +143,8 @@ export function ProfileProvider({children}: {children: React.ReactNode}) {
         onboardingComplete: true,
         updatedAt: serverTimestamp(),
       });
+      seedDefaultHabitsIntoBatch(batch, user.uid);
+      await batch.commit();
     },
     [user],
   );
