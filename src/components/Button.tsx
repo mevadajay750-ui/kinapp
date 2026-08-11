@@ -1,5 +1,11 @@
 import React from 'react';
-import {Pressable, View, StyleSheet, ViewStyle} from 'react-native';
+import {
+  Pressable,
+  View,
+  StyleSheet,
+  ViewStyle,
+  ActivityIndicator,
+} from 'react-native';
 import {colors, spacing, radius} from '../theme';
 import {Text} from './Text';
 
@@ -8,6 +14,7 @@ type Props = {
   onPress: () => void;
   variant?: 'primary' | 'ghost';
   disabled?: boolean;
+  loading?: boolean;
   style?: ViewStyle;
 };
 
@@ -16,24 +23,33 @@ export function Button({
   onPress,
   variant = 'primary',
   disabled,
+  loading,
   style,
 }: Props) {
   const isPrimary = variant === 'primary';
+  const isDisabled = disabled || loading;
+
   return (
     <Pressable
       onPress={onPress}
-      disabled={disabled}
+      disabled={isDisabled}
       style={({pressed}) => [
         styles.base,
         isPrimary ? styles.primary : styles.ghost,
         pressed && {opacity: 0.85},
-        disabled && {opacity: 0.4},
+        isDisabled && {opacity: 0.4},
         style,
       ]}>
-      {isPrimary && <View style={styles.dot} />}
-      <Text variant="bodyMedium" color={isPrimary ? 'papaya' : 'plum'}>
-        {label}
-      </Text>
+      {loading ? (
+        <ActivityIndicator color={isPrimary ? colors.papaya : colors.plum} />
+      ) : (
+        <>
+          {isPrimary && <View style={styles.dot} />}
+          <Text variant="bodyMedium" color={isPrimary ? 'papaya' : 'plum'}>
+            {label}
+          </Text>
+        </>
+      )}
     </Pressable>
   );
 }

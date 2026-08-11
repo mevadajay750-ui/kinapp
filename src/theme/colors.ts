@@ -8,6 +8,7 @@ export const colors = {
   blush: '#F5D9C4',       // gentle highlight
   warmGray: '#9A8879',    // secondary text, muted labels
   hairline: '#E5D8CB',    // borders, dividers
+  clay: '#B4544A',        // error states, gentle alert
   ink80: 'rgba(61, 35, 55, 0.8)',
   ink60: 'rgba(61, 35, 55, 0.6)',
   ink40: 'rgba(61, 35, 55, 0.4)',

@@ -1,7 +1,8 @@
 import {initializeApp, getApps, getApp, FirebaseApp} from 'firebase/app';
-import {initializeAuth, getAuth, Auth} from 'firebase/auth';
-// @ts-expect-error — exported under react-native condition, resolved by Metro at runtime
-import {getReactNativePersistence} from '@firebase/auth';
+import {initializeAuth, getAuth, Auth, Persistence} from 'firebase/auth';
+import * as firebaseAuth from 'firebase/auth';
+// RN-conditioned entry — Metro resolves this to the react-native build at runtime.
+import * as firebaseAuthRN from '@firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {getFirestore, Firestore} from 'firebase/firestore';
 import Config from 'react-native-config';
@@ -15,22 +16,64 @@ const firebaseConfig = {
   appId: Config.FIREBASE_APP_ID,
 };
 
-// If Firebase config is missing, export null values. AuthProvider handles this gracefully.
 const hasConfig = !!firebaseConfig.apiKey;
 
 let app: FirebaseApp | null = null;
 let auth: Auth | null = null;
 let db: Firestore | null = null;
 
+/**
+ * Firebase v12 exposes RN persistence two ways. `reactNativeLocalPersistence`
+ * is the newer export; `getReactNativePersistence` is the older factory and
+ * is missing from the published TS types (firebase-js-sdk#9316) even though
+ * it exists at runtime. Resolve whichever is present.
+ *
+ * Check both `firebase/auth` and `@firebase/auth` — Metro's react-native
+ * condition is reliable on the latter.
+ */
+function resolveRNPersistence(): Persistence | undefined {
+  const candidates = [
+    firebaseAuth as unknown as Record<string, unknown>,
+    firebaseAuthRN as unknown as Record<string, unknown>,
+  ];
+
+  for (const mod of candidates) {
+    if (mod.reactNativeLocalPersistence) {
+      console.log('[kin] Firebase auth persistence: reactNativeLocalPersistence');
+      return mod.reactNativeLocalPersistence as Persistence;
+    }
+  }
+
+  for (const mod of candidates) {
+    if (typeof mod.getReactNativePersistence === 'function') {
+      console.log('[kin] Firebase auth persistence: getReactNativePersistence');
+      return (mod.getReactNativePersistence as (s: unknown) => Persistence)(
+        AsyncStorage,
+      );
+    }
+  }
+
+  return undefined;
+}
+
 if (hasConfig) {
   app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+
   try {
-    auth = initializeAuth(app, {
-      persistence: getReactNativePersistence(AsyncStorage),
-    });
+    const persistence = resolveRNPersistence();
+    if (!persistence) {
+      console.warn(
+        '[kin] Firebase auth persistence unavailable — sessions will not survive app restart.',
+      );
+    }
+    auth = persistence
+      ? initializeAuth(app, {persistence})
+      : initializeAuth(app);
   } catch {
+    // initializeAuth throws if auth was already initialized (Fast Refresh).
     auth = getAuth(app);
   }
+
   db = getFirestore(app);
 }
 

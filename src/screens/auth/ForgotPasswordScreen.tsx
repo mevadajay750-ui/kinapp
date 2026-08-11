@@ -1,4 +1,4 @@
-import React, {useRef, useState} from 'react';
+import React, {useState} from 'react';
 import {
   Keyboard,
   KeyboardAvoidingView,
@@ -6,79 +6,58 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  TextInput,
   View,
 } from 'react-native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {useNavigation} from '@react-navigation/native';
+import {ArrowLeft} from 'lucide-react-native';
 import {Screen} from '../../components/Screen';
 import {Text} from '../../components/Text';
 import {Button} from '../../components/Button';
 import {Input} from '../../components/Input';
-import {KinLogo} from '../../components/KinLogo';
 import {useAuth} from '../../hooks/useAuth';
 import {authErrorMessage} from '../../lib/authErrors';
 import {AuthStackParamList} from '../../navigation/AuthStack';
-import {spacing} from '../../theme';
+import {colors, spacing} from '../../theme';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-type Nav = NativeStackNavigationProp<AuthStackParamList, 'SignIn'>;
+type Nav = NativeStackNavigationProp<AuthStackParamList, 'ForgotPassword'>;
 
-type FieldErrors = {
-  email?: string;
-  password?: string;
-};
-
-export function SignInScreen() {
+export function ForgotPasswordScreen() {
   const navigation = useNavigation<Nav>();
-  const {signIn} = useAuth();
+  const {resetPassword} = useAuth();
 
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [emailError, setEmailError] = useState<string | undefined>();
   const [formError, setFormError] = useState('');
   const [loading, setLoading] = useState(false);
-
-  const passwordRef = useRef<TextInput>(null);
+  const [sent, setSent] = useState(false);
+  const [sentEmail, setSentEmail] = useState('');
 
   const validate = (): boolean => {
-    const next: FieldErrors = {};
     if (!email.trim()) {
-      next.email = 'Add your email to continue.';
-    } else if (!EMAIL_RE.test(email.trim())) {
-      next.email = "That email doesn't look right. Mind checking it?";
+      setEmailError('Add your email to continue.');
+      return false;
     }
-    if (!password) {
-      next.password = 'Add a password to continue.';
+    if (!EMAIL_RE.test(email.trim())) {
+      setEmailError("That email doesn't look right. Mind checking it?");
+      return false;
     }
-    setFieldErrors(next);
-    return Object.keys(next).length === 0;
+    setEmailError(undefined);
+    return true;
   };
 
   const onEmailChange = (text: string) => {
     setEmail(text);
-    if (fieldErrors.email) {
+    if (emailError) {
       if (!text.trim()) {
-        setFieldErrors(e => ({...e, email: 'Add your email to continue.'}));
+        setEmailError('Add your email to continue.');
       } else if (!EMAIL_RE.test(text.trim())) {
-        setFieldErrors(e => ({
-          ...e,
-          email: "That email doesn't look right. Mind checking it?",
-        }));
+        setEmailError("That email doesn't look right. Mind checking it?");
       } else {
-        setFieldErrors(e => ({...e, email: undefined}));
+        setEmailError(undefined);
       }
-    }
-  };
-
-  const onPasswordChange = (text: string) => {
-    setPassword(text);
-    if (fieldErrors.password) {
-      setFieldErrors(e => ({
-        ...e,
-        password: text ? undefined : 'Add a password to continue.',
-      }));
     }
   };
 
@@ -89,13 +68,37 @@ export function SignInScreen() {
     }
     setLoading(true);
     try {
-      await signIn(email, password);
+      await resetPassword(email);
+      setSentEmail(email.trim().toLowerCase());
+      setSent(true);
     } catch (err) {
       setFormError(authErrorMessage(err));
     } finally {
       setLoading(false);
     }
   };
+
+  if (sent) {
+    return (
+      <Screen style={styles.successScreen}>
+        <View style={styles.successContent}>
+          <View style={styles.marigoldDot} />
+          <Text variant="h2" style={styles.successHeading}>
+            Check your email.
+          </Text>
+          <Text variant="body" color="ink60" style={styles.successBody}>
+            {`If an account exists for ${sentEmail}, a reset link is on its way.`}
+          </Text>
+          <Button
+            label="Back to sign in"
+            variant="ghost"
+            onPress={() => navigation.navigate('SignIn')}
+            style={styles.successButton}
+          />
+        </View>
+      </Screen>
+    );
+  }
 
   return (
     <Screen>
@@ -107,15 +110,23 @@ export function SignInScreen() {
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={styles.scroll}
             showsVerticalScrollIndicator={false}>
-            <KinLogo size={56} />
+            <Pressable
+              onPress={() => navigation.goBack()}
+              hitSlop={12}
+              style={styles.back}
+              accessibilityRole="button"
+              accessibilityLabel="Go back">
+              <ArrowLeft size={22} color={colors.plum} />
+            </Pressable>
+
             <Text variant="eyebrow" color="warmGray" style={styles.eyebrow}>
-              Welcome back
+              Reset
             </Text>
             <Text variant="h1" style={styles.heading}>
-              Good to see you.
+              Let's get you back in.
             </Text>
             <Text variant="body" color="ink60" style={styles.body}>
-              Sign in to pick up where you left off.
+              Enter your email and we'll send a link to set a new password.
             </Text>
 
             <View style={styles.form}>
@@ -123,34 +134,15 @@ export function SignInScreen() {
                 label="Email"
                 value={email}
                 onChangeText={onEmailChange}
-                error={fieldErrors.email}
+                error={emailError}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
-                returnKeyType="next"
-                onSubmitEditing={() => passwordRef.current?.focus()}
+                returnKeyType="done"
+                onSubmitEditing={onSubmit}
                 textContentType="emailAddress"
                 autoComplete="email"
               />
-              <Input
-                ref={passwordRef}
-                label="Password"
-                value={password}
-                onChangeText={onPasswordChange}
-                error={fieldErrors.password}
-                secureTextEntry
-                returnKeyType="done"
-                onSubmitEditing={onSubmit}
-                textContentType="password"
-                autoComplete="password"
-              />
-              <Pressable
-                onPress={() => navigation.navigate('ForgotPassword')}
-                style={styles.forgot}>
-                <Text variant="small" color="warmGray">
-                  Forgot password?
-                </Text>
-              </Pressable>
 
               {formError ? (
                 <Text variant="caption" color="clay" style={styles.formError}>
@@ -159,20 +151,12 @@ export function SignInScreen() {
               ) : null}
 
               <Button
-                label="Sign in"
+                label="Send reset link"
                 onPress={onSubmit}
                 loading={loading}
                 style={styles.submit}
               />
             </View>
-
-            <Pressable
-              onPress={() => navigation.navigate('SignUp')}
-              style={styles.footerLink}>
-              <Text variant="body" color="warmGray">
-                New here? Create an account
-              </Text>
-            </Pressable>
           </ScrollView>
         </Pressable>
       </KeyboardAvoidingView>
@@ -184,11 +168,15 @@ const styles = StyleSheet.create({
   flex: {flex: 1},
   scroll: {
     flexGrow: 1,
-    paddingTop: spacing.xxl,
+    paddingTop: spacing.lg,
     paddingBottom: spacing.xxxl,
   },
+  back: {
+    alignSelf: 'flex-start',
+    marginBottom: spacing.xl,
+  },
   eyebrow: {
-    marginTop: spacing.xl,
+    marginTop: spacing.sm,
   },
   heading: {
     marginTop: spacing.sm,
@@ -200,18 +188,36 @@ const styles = StyleSheet.create({
     marginTop: spacing.xxl,
     gap: spacing.lg,
   },
-  forgot: {
-    alignSelf: 'flex-end',
-    marginTop: -spacing.sm,
-  },
   formError: {
     marginTop: -spacing.sm,
   },
   submit: {
     marginTop: spacing.sm,
   },
-  footerLink: {
-    marginTop: spacing.xxl,
+  successScreen: {
+    justifyContent: 'center',
     alignItems: 'center',
+  },
+  successContent: {
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+  },
+  marigoldDot: {
+    width: 24,
+    height: 24,
+    borderRadius: 999,
+    backgroundColor: colors.marigold,
+  },
+  successHeading: {
+    marginTop: spacing.xl,
+    textAlign: 'center',
+  },
+  successBody: {
+    marginTop: spacing.md,
+    textAlign: 'center',
+  },
+  successButton: {
+    marginTop: spacing.xxl,
+    alignSelf: 'stretch',
   },
 });
