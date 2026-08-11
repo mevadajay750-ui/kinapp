@@ -15,6 +15,7 @@ import {
   deleteMealEntry,
   MealEntry,
 } from '../../lib/meals';
+import {computeDayStats, plateCopy} from '../../lib/dayStats';
 import type {MealCategory} from '../../data/foods';
 import type {MealsStackParamList} from '../../navigation/MealsStack';
 
@@ -26,22 +27,6 @@ const CATEGORIES: {key: MealCategory; label: string}[] = [
   {key: 'dinner', label: 'Dinner'},
   {key: 'snack', label: 'Snacks'},
 ];
-
-function totalCopy(consumed: number, target: number): string {
-  if (consumed === 0) {
-    return 'Nothing logged yet. Even a cup of chai counts.';
-  }
-  const ratio = consumed / target;
-  if (ratio < 0.85) {
-    const n = Math.max(0, Math.round(target - consumed));
-    return `${n.toLocaleString()} kcal to go.`;
-  }
-  if (ratio <= 1) {
-    return 'Nearly there. A lighter supper would round it off.';
-  }
-  const over = Math.round(consumed - target);
-  return `${over.toLocaleString()} over today. Worth noticing, not worth worrying about.`;
-}
 
 function SkeletonRows() {
   return (
@@ -76,14 +61,9 @@ export function MealsDayScreen({navigation}: Props) {
     return unsub;
   }, [user, dateKey]);
 
-  const consumed = useMemo(
-    () => entries.reduce((sum, e) => sum + e.kcal, 0),
-    [entries],
-  );
-  const protein = useMemo(
-    () => entries.reduce((sum, e) => sum + e.proteinG, 0),
-    [entries],
-  );
+  const stats = useMemo(() => computeDayStats(entries), [entries]);
+  const consumed = stats.kcal;
+  const protein = stats.proteinG;
 
   const byCategory = useMemo(() => {
     const map: Record<MealCategory, MealEntry[]> = {
@@ -145,7 +125,7 @@ export function MealsDayScreen({navigation}: Props) {
             />
           </View>
           <Text variant="caption" color="warmGray" style={styles.copy}>
-            {loading ? ' ' : totalCopy(consumed, target)}
+            {loading ? ' ' : plateCopy(consumed, target)}
           </Text>
           <Text variant="caption" color="warmGray" style={styles.protein}>
             {Math.round(protein).toLocaleString()} g protein

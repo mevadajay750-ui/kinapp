@@ -28,6 +28,7 @@ import {
   subscribeToHabitLogs,
   subscribeToHabits,
 } from '../../lib/habits';
+import {computeHabitProgress} from '../../lib/dayStats';
 import type {HabitsStackParamList} from '../../navigation/HabitsStack';
 
 type Props = NativeStackScreenProps<HabitsStackParamList, 'HabitsDay'>;
@@ -172,9 +173,9 @@ export function HabitsDayScreen({navigation}: Props) {
     return map;
   }, [dayLogs]);
 
-  const completedToday = useMemo(
-    () => habits.filter(h => dayLogByHabit.get(h.id)?.completed).length,
-    [habits, dayLogByHabit],
+  const {done: completedToday} = useMemo(
+    () => computeHabitProgress(habits, dayLogs),
+    [habits, dayLogs],
   );
 
   const loading = habitsLoading || (habits.length > 0 && logsLoading);

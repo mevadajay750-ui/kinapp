@@ -186,3 +186,106 @@ export async function fetchRecentFoods(
 
   return recents;
 }
+
+export async function getMealRange(
+  uid: string,
+  startKey: string,
+  endKey: string,
+): Promise<MealEntry[]> {
+  const q = query(
+    entriesCol(uid),
+    where('date', '>=', startKey),
+    where('date', '<=', endKey),
+    orderBy('date', 'desc'),
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map(d =>
+    mapEntry(d.id, d.data() as Record<string, unknown>),
+  );
+}
+
+export type QuickAddFood = {
+  foodId: string | null;
+  name: string;
+  serving: string;
+  category: MealCategory;
+  /** Per-portion base kcal / protein for logging at 1 portion. */
+  kcal: number;
+  proteinG: number;
+  count: number;
+};
+
+/**
+ * Top foods by log frequency over a range. Category is the mode.
+ * Caller should hide the row when fewer than 3 distinct foods.
+ */
+export function buildQuickAddFoods(
+  entries: MealEntry[],
+  limitCount = 6,
+): QuickAddFood[] {
+  type Acc = {
+    foodId: string | null;
+    name: string;
+    serving: string;
+    kcal: number;
+    proteinG: number;
+    count: number;
+    categories: Record<string, number>;
+  };
+
+  const byKey = new Map<string, Acc>();
+
+  for (const e of entries) {
+    const key = e.foodId ? `id:${e.foodId}` : `name:${e.name.toLowerCase()}`;
+    const portions = Number(e.portions) || 1;
+    const baseKcal = Math.round(e.kcal / portions);
+    const baseProtein =
+      Math.round((e.proteinG / portions) * 10) / 10;
+
+    let acc = byKey.get(key);
+    if (!acc) {
+      acc = {
+        foodId: e.foodId,
+        name: e.name,
+        serving: e.serving,
+        kcal: baseKcal,
+        proteinG: baseProtein,
+        count: 0,
+        categories: {},
+      };
+      byKey.set(key, acc);
+    }
+    acc.count += 1;
+    acc.categories[e.category] = (acc.categories[e.category] ?? 0) + 1;
+    // Prefer most recent serving / per-portion values
+    acc.serving = e.serving;
+    acc.kcal = baseKcal;
+    acc.proteinG = baseProtein;
+    acc.name = e.name;
+    acc.foodId = e.foodId;
+  }
+
+  const foods: QuickAddFood[] = [];
+  for (const acc of byKey.values()) {
+    let bestCategory: MealCategory = 'snack';
+    let bestCount = -1;
+    for (const [cat, n] of Object.entries(acc.categories)) {
+      if (n > bestCount) {
+        bestCount = n;
+        bestCategory = cat as MealCategory;
+      }
+    }
+    foods.push({
+      foodId: acc.foodId,
+      name: acc.name,
+      serving: acc.serving,
+      category: bestCategory,
+      kcal: acc.kcal,
+      proteinG: acc.proteinG,
+      count: acc.count,
+    });
+  }
+
+  foods.sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+  return foods.slice(0, limitCount);
+}

@@ -2,7 +2,7 @@ import React from 'react';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {Home, UtensilsCrossed, ListChecks, TrendingUp} from 'lucide-react-native';
 import {colors} from '../theme';
-import {TodayScreen} from '../screens/tabs/TodayScreen';
+import {TodayStack} from './TodayStack';
 import {MealsStack} from './MealsStack';
 import {HabitsStack} from './HabitsStack';
 import {ProgressScreen} from '../screens/tabs/ProgressScreen';
@@ -39,7 +39,7 @@ export function TabNavigator() {
       }}>
       <Tab.Screen
         name="Today"
-        component={TodayScreen}
+        component={TodayStack}
         options={{
           tabBarIcon: ({color, size}) => (
             <Home color={color} size={size - 2} strokeWidth={1.8} />

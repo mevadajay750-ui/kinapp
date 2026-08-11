@@ -16,9 +16,10 @@ const today = new Date().toLocaleDateString(undefined, {
 
 export function ProgressScreen() {
   const {signOut} = useAuth();
-  const {updateProfile} = useProfile();
+  const {profile, updateProfile} = useProfile();
   const [loading, setLoading] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
+  const [goalLoading, setGoalLoading] = useState(false);
   const [error, setError] = useState('');
 
   const onSignOut = async () => {
@@ -45,6 +46,30 @@ export function ProgressScreen() {
     }
   };
 
+  const start = profile?.startWeightKg;
+  const goal = profile?.goalWeightKg;
+  const goalIsAbove =
+    start != null && goal != null && goal > start;
+
+  const onFlipGoal = async () => {
+    if (start == null) {
+      setError('No start weight on profile.');
+      return;
+    }
+    setError('');
+    setGoalLoading(true);
+    try {
+      const nextGoal = goalIsAbove
+        ? Math.round((start - 5) * 10) / 10
+        : Math.round((start + 5) * 10) / 10;
+      await updateProfile({goalWeightKg: nextGoal});
+    } catch (err) {
+      setError(authErrorMessage(err));
+    } finally {
+      setGoalLoading(false);
+    }
+  };
+
   return (
     <Screen scroll>
       <Text variant="eyebrow" color="warmGray" style={styles.eyebrow}>
@@ -57,7 +82,7 @@ export function ProgressScreen() {
         The shape of your weeks and months. Weight, streaks, and quiet wins.
       </Text>
       <Text variant="caption" color="warmGray" style={styles.note}>
-        Progress views ship in prompt 06.
+        Progress views ship in prompt 07.
       </Text>
 
       {__DEV__ ? (
@@ -74,6 +99,15 @@ export function ProgressScreen() {
             variant="ghost"
             onPress={onResetOnboarding}
             loading={resetLoading}
+            style={styles.reset}
+          />
+          <Button
+            label={
+              goalIsAbove ? 'Set goal below start' : 'Set goal above start'
+            }
+            variant="ghost"
+            onPress={onFlipGoal}
+            loading={goalLoading}
             style={styles.reset}
           />
         </View>

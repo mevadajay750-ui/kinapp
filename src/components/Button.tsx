@@ -13,6 +13,7 @@ type Props = {
   label: string;
   onPress: () => void;
   variant?: 'primary' | 'ghost';
+  size?: 'default' | 'small';
   disabled?: boolean;
   loading?: boolean;
   style?: ViewStyle;
@@ -22,11 +23,13 @@ export function Button({
   label,
   onPress,
   variant = 'primary',
+  size = 'default',
   disabled,
   loading,
   style,
 }: Props) {
   const isPrimary = variant === 'primary';
+  const isSmall = size === 'small';
   const isDisabled = disabled || loading;
 
   return (
@@ -35,6 +38,7 @@ export function Button({
       disabled={isDisabled}
       style={({pressed}) => [
         styles.base,
+        isSmall ? styles.small : null,
         isPrimary ? styles.primary : styles.ghost,
         pressed && {opacity: 0.85},
         isDisabled && {opacity: 0.4},
@@ -45,7 +49,9 @@ export function Button({
       ) : (
         <>
           {isPrimary && <View style={styles.dot} />}
-          <Text variant="bodyMedium" color={isPrimary ? 'papaya' : 'plum'}>
+          <Text
+            variant={isSmall ? 'small' : 'bodyMedium'}
+            color={isPrimary ? 'papaya' : 'plum'}>
             {label}
           </Text>
         </>
@@ -63,6 +69,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.md + 2,
     borderRadius: radius.pill,
+  },
+  small: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm + 2,
+    gap: spacing.xs,
   },
   primary: {backgroundColor: colors.plum},
   ghost: {

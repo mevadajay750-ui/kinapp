@@ -8,6 +8,7 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import {useAuth} from '../hooks/useAuth';
+import {localDateKey} from '../lib/dates';
 import {db} from '../lib/firebase';
 import {seedDefaultHabitsIntoBatch} from '../lib/habits';
 import {
@@ -15,6 +16,7 @@ import {
   OnboardingData,
   UserProfile,
 } from '../lib/userProfile';
+import {seedWeightIntoBatch} from '../lib/weights';
 
 type ProfileCtx = {
   profile: UserProfile | null;
@@ -144,6 +146,12 @@ export function ProfileProvider({children}: {children: React.ReactNode}) {
         updatedAt: serverTimestamp(),
       });
       seedDefaultHabitsIntoBatch(batch, user.uid);
+      seedWeightIntoBatch(
+        batch,
+        user.uid,
+        localDateKey(),
+        data.startWeightKg,
+      );
       await batch.commit();
     },
     [user],
