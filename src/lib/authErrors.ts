@@ -16,6 +16,8 @@ const MESSAGES: Record<string, string> = {
   'auth/operation-not-allowed':
     'Email sign-in is not enabled for this app yet.',
   'auth/not-configured': 'The app is not connected yet. Check your setup.',
+  'auth/requires-recent-login':
+    'For your security, sign in again before deleting your account.',
 };
 
 export function authErrorMessage(error: unknown): string {

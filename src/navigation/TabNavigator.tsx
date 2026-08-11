@@ -1,14 +1,15 @@
 import React from 'react';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
+import {NavigatorScreenParams} from '@react-navigation/native';
 import {Home, UtensilsCrossed, ListChecks, TrendingUp} from 'lucide-react-native';
 import {colors} from '../theme';
-import {TodayStack} from './TodayStack';
+import {TodayStack, TodayStackParamList} from './TodayStack';
 import {MealsStack} from './MealsStack';
 import {HabitsStack} from './HabitsStack';
-import {ProgressScreen} from '../screens/tabs/ProgressScreen';
+import {ProgressStack} from './ProgressStack';
 
 export type TabParamList = {
-  Today: undefined;
+  Today: NavigatorScreenParams<TodayStackParamList> | undefined;
   Meals: undefined;
   Habits: undefined;
   Progress: undefined;
@@ -66,7 +67,7 @@ export function TabNavigator() {
       />
       <Tab.Screen
         name="Progress"
-        component={ProgressScreen}
+        component={ProgressStack}
         options={{
           tabBarIcon: ({color, size}) => (
             <TrendingUp color={color} size={size - 2} strokeWidth={1.8} />

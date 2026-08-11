@@ -12,7 +12,7 @@ import {Text} from './Text';
 type Props = {
   label: string;
   onPress: () => void;
-  variant?: 'primary' | 'ghost';
+  variant?: 'primary' | 'ghost' | 'destructive';
   size?: 'default' | 'small';
   disabled?: boolean;
   loading?: boolean;
@@ -29,6 +29,8 @@ export function Button({
   style,
 }: Props) {
   const isPrimary = variant === 'primary';
+  const isDestructive = variant === 'destructive';
+  const isFilled = isPrimary || isDestructive;
   const isSmall = size === 'small';
   const isDisabled = disabled || loading;
 
@@ -39,19 +41,23 @@ export function Button({
       style={({pressed}) => [
         styles.base,
         isSmall ? styles.small : null,
-        isPrimary ? styles.primary : styles.ghost,
+        isPrimary
+          ? styles.primary
+          : isDestructive
+            ? styles.destructive
+            : styles.ghost,
         pressed && {opacity: 0.85},
         isDisabled && {opacity: 0.4},
         style,
       ]}>
       {loading ? (
-        <ActivityIndicator color={isPrimary ? colors.papaya : colors.plum} />
+        <ActivityIndicator color={isFilled ? colors.papaya : colors.plum} />
       ) : (
         <>
           {isPrimary && <View style={styles.dot} />}
           <Text
             variant={isSmall ? 'small' : 'bodyMedium'}
-            color={isPrimary ? 'papaya' : 'plum'}>
+            color={isFilled ? 'papaya' : 'plum'}>
             {label}
           </Text>
         </>
@@ -76,6 +82,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   primary: {backgroundColor: colors.plum},
+  destructive: {backgroundColor: colors.clay},
   ghost: {
     backgroundColor: 'transparent',
     borderWidth: 1,

@@ -13,6 +13,10 @@ type Props = {
   cancelLabel?: string;
   onConfirm: () => void;
   onCancel: () => void;
+  /** Clay primary — delete account and other irreversible actions. */
+  destructive?: boolean;
+  confirmDisabled?: boolean;
+  confirmLoading?: boolean;
 };
 
 export function ConfirmSheet({
@@ -23,6 +27,9 @@ export function ConfirmSheet({
   cancelLabel = 'Cancel',
   onConfirm,
   onCancel,
+  destructive,
+  confirmDisabled,
+  confirmLoading,
 }: Props) {
   const insets = useSafeAreaInsets();
 
@@ -45,7 +52,14 @@ export function ConfirmSheet({
               {body}
             </Text>
           ) : null}
-          <Button label={confirmLabel} onPress={onConfirm} style={styles.btn} />
+          <Button
+            label={confirmLabel}
+            variant={destructive ? 'destructive' : 'primary'}
+            onPress={onConfirm}
+            disabled={confirmDisabled}
+            loading={confirmLoading}
+            style={styles.btn}
+          />
           <Button
             label={cancelLabel}
             variant="ghost"
