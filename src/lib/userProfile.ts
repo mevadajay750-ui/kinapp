@@ -5,13 +5,21 @@ export type UserProfile = {
   uid: string;
   email: string;
   name: string;
-  // Onboarding fields — null until the user completes onboarding in a later prompt
   startWeightKg: number | null;
   goalWeightKg: number | null;
+  heightCm: number | null; // optional, used only for the target suggestion
   dailyKcalTarget: number | null;
   onboardingComplete: boolean;
   createdAt: unknown; // serverTimestamp
   updatedAt: unknown; // serverTimestamp
+};
+
+export type OnboardingData = {
+  name: string;
+  startWeightKg: number;
+  goalWeightKg: number;
+  heightCm: number | null;
+  dailyKcalTarget: number;
 };
 
 export async function createUserProfile(
@@ -29,6 +37,7 @@ export async function createUserProfile(
     name,
     startWeightKg: null,
     goalWeightKg: null,
+    heightCm: null,
     dailyKcalTarget: null,
     onboardingComplete: false,
     createdAt: serverTimestamp(),

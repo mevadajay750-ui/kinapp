@@ -67,8 +67,7 @@ export function AuthProvider({children}: {children: React.ReactNode}) {
     try {
       await createUserProfile(cred.user.uid, normalizedEmail, trimmedName);
     } catch (err) {
-      // Auth account stands; reconcile missing profile on app open in a later prompt.
-      // TODO: reconcile missing Firestore user profile on app open
+      // Auth account stands; ProfileProvider reconciles a missing doc on open.
       console.error('[kin] Failed to create user profile:', err);
     }
   };

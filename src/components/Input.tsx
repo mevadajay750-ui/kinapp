@@ -16,6 +16,7 @@ type Props = TextInputProps & {
   onChangeText: (text: string) => void;
   error?: string;
   secureTextEntry?: boolean;
+  suffix?: string;
 };
 
 export const Input = forwardRef<TextInput, Props>(function Input(
@@ -25,6 +26,7 @@ export const Input = forwardRef<TextInput, Props>(function Input(
     onChangeText,
     error,
     secureTextEntry,
+    suffix,
     onFocus,
     onBlur,
     style,
@@ -65,6 +67,11 @@ export const Input = forwardRef<TextInput, Props>(function Input(
           style={[styles.input, style]}
           {...rest}
         />
+        {suffix ? (
+          <Text variant="caption" color="warmGray">
+            {suffix}
+          </Text>
+        ) : null}
         {secureTextEntry ? (
           <Pressable
             onPress={() => setVisible(v => !v)}

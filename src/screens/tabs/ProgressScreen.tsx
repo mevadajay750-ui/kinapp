@@ -1,9 +1,10 @@
 import React, {useState} from 'react';
-import {StyleSheet} from 'react-native';
+import {StyleSheet, View} from 'react-native';
 import {Screen} from '../../components/Screen';
 import {Text} from '../../components/Text';
 import {Button} from '../../components/Button';
 import {useAuth} from '../../hooks/useAuth';
+import {useProfile} from '../../hooks/useProfile';
 import {authErrorMessage} from '../../lib/authErrors';
 import {spacing} from '../../theme';
 
@@ -15,7 +16,9 @@ const today = new Date().toLocaleDateString(undefined, {
 
 export function ProgressScreen() {
   const {signOut} = useAuth();
+  const {updateProfile} = useProfile();
   const [loading, setLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
   const [error, setError] = useState('');
 
   const onSignOut = async () => {
@@ -27,6 +30,18 @@ export function ProgressScreen() {
       setError(authErrorMessage(err));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const onResetOnboarding = async () => {
+    setError('');
+    setResetLoading(true);
+    try {
+      await updateProfile({onboardingComplete: false});
+    } catch (err) {
+      setError(authErrorMessage(err));
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -45,14 +60,24 @@ export function ProgressScreen() {
         Progress views ship in prompt 06.
       </Text>
 
-      {/* TODO: move to Settings screen */}
-      <Button
-        label="Sign out"
-        variant="ghost"
-        onPress={onSignOut}
-        loading={loading}
-        style={styles.signOut}
-      />
+      {__DEV__ ? (
+        <View style={styles.devControls}>
+          {/* TODO: remove before release — dev-only controls */}
+          <Button
+            label="Sign out"
+            variant="ghost"
+            onPress={onSignOut}
+            loading={loading}
+          />
+          <Button
+            label="Reset onboarding"
+            variant="ghost"
+            onPress={onResetOnboarding}
+            loading={resetLoading}
+            style={styles.reset}
+          />
+        </View>
+      ) : null}
       {error ? (
         <Text variant="caption" color="clay" style={styles.error}>
           {error}
@@ -76,8 +101,11 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     marginTop: spacing.lg,
   },
-  signOut: {
+  devControls: {
     marginTop: spacing.xxxl,
+  },
+  reset: {
+    marginTop: spacing.md,
   },
   error: {
     marginTop: spacing.md,
