@@ -4,7 +4,6 @@ import {
   getDoc,
   getDocs,
   onSnapshot,
-  orderBy,
   query,
   serverTimestamp,
   setDoc,
@@ -169,16 +168,17 @@ export function subscribeToHabits(
   uid: string,
   cb: (habits: Habit[]) => void,
 ): () => void {
-  const q = query(
-    habitsCol(uid),
-    where('archived', '==', false),
-    orderBy('order'),
-  );
+  // Equality-only + client sort so the tab works before the composite
+  // (archived, order) index finishes building. Habit lists stay small.
+  const q = query(habitsCol(uid), where('archived', '==', false));
 
   return onSnapshot(
     q,
     snap => {
-      cb(snap.docs.map(d => mapHabit(d.id, d.data() as Record<string, unknown>)));
+      const habits = snap.docs
+        .map(d => mapHabit(d.id, d.data() as Record<string, unknown>))
+        .sort((a, b) => a.order - b.order);
+      cb(habits);
     },
     err => {
       console.warn('[kin] subscribeToHabits error', err);
@@ -191,16 +191,15 @@ export function subscribeToArchivedHabits(
   uid: string,
   cb: (habits: Habit[]) => void,
 ): () => void {
-  const q = query(
-    habitsCol(uid),
-    where('archived', '==', true),
-    orderBy('order'),
-  );
+  const q = query(habitsCol(uid), where('archived', '==', true));
 
   return onSnapshot(
     q,
     snap => {
-      cb(snap.docs.map(d => mapHabit(d.id, d.data() as Record<string, unknown>)));
+      const habits = snap.docs
+        .map(d => mapHabit(d.id, d.data() as Record<string, unknown>))
+        .sort((a, b) => a.order - b.order);
+      cb(habits);
     },
     err => {
       console.warn('[kin] subscribeToArchivedHabits error', err);
@@ -272,14 +271,18 @@ export async function createHabit(
   const ref = doc(habitsCol(uid));
   let order = input.order;
   if (order == null) {
-    const active = query(
-      habitsCol(uid),
-      where('archived', '==', false),
-      orderBy('order'),
-    );
+    // Equality-only query — no composite index required. Max order is
+    // computed client-side so create works while (archived, order) builds.
+    const active = query(habitsCol(uid), where('archived', '==', false));
     const snap = await getDocs(active);
-    const last = snap.docs[snap.docs.length - 1];
-    order = last ? Number(last.data().order ?? 0) + 1 : 0;
+    let maxOrder = -1;
+    for (const d of snap.docs) {
+      const o = Number(d.data().order ?? 0);
+      if (o > maxOrder) {
+        maxOrder = o;
+      }
+    }
+    order = maxOrder + 1;
   }
   await setDoc(ref, {
     name: input.name,
