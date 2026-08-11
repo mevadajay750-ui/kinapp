@@ -3,7 +3,7 @@ import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {Home, UtensilsCrossed, ListChecks, TrendingUp} from 'lucide-react-native';
 import {colors} from '../theme';
 import {TodayScreen} from '../screens/tabs/TodayScreen';
-import {MealsScreen} from '../screens/tabs/MealsScreen';
+import {MealsStack} from './MealsStack';
 import {HabitsScreen} from '../screens/tabs/HabitsScreen';
 import {ProgressScreen} from '../screens/tabs/ProgressScreen';
 
@@ -48,7 +48,7 @@ export function TabNavigator() {
       />
       <Tab.Screen
         name="Meals"
-        component={MealsScreen}
+        component={MealsStack}
         options={{
           tabBarIcon: ({color, size}) => (
             <UtensilsCrossed color={color} size={size - 2} strokeWidth={1.8} />

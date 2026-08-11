@@ -1,4 +1,4 @@
-import React, {forwardRef, useState} from 'react';
+import React, {forwardRef, useState, ReactNode} from 'react';
 import {
   View,
   TextInput,
@@ -11,12 +11,14 @@ import {colors, spacing, radius, typography} from '../theme';
 import {Text} from './Text';
 
 type Props = TextInputProps & {
-  label: string;
+  label?: string;
   value: string;
   onChangeText: (text: string) => void;
   error?: string;
   secureTextEntry?: boolean;
   suffix?: string;
+  leftIcon?: ReactNode;
+  rightIcon?: ReactNode;
 };
 
 export const Input = forwardRef<TextInput, Props>(function Input(
@@ -27,6 +29,8 @@ export const Input = forwardRef<TextInput, Props>(function Input(
     error,
     secureTextEntry,
     suffix,
+    leftIcon,
+    rightIcon,
     onFocus,
     onBlur,
     style,
@@ -46,10 +50,13 @@ export const Input = forwardRef<TextInput, Props>(function Input(
 
   return (
     <View style={styles.wrap}>
-      <Text variant="eyebrow" color="warmGray" style={styles.label}>
-        {label}
-      </Text>
+      {label ? (
+        <Text variant="eyebrow" color="warmGray" style={styles.label}>
+          {label}
+        </Text>
+      ) : null}
       <View style={[styles.field, {borderColor}]}>
+        {leftIcon ? <View style={styles.icon}>{leftIcon}</View> : null}
         <TextInput
           ref={ref}
           value={value}
@@ -72,6 +79,7 @@ export const Input = forwardRef<TextInput, Props>(function Input(
             {suffix}
           </Text>
         ) : null}
+        {rightIcon ? <View style={styles.icon}>{rightIcon}</View> : null}
         {secureTextEntry ? (
           <Pressable
             onPress={() => setVisible(v => !v)}
@@ -111,6 +119,10 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
     gap: spacing.sm,
+  },
+  icon: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   input: {
     flex: 1,

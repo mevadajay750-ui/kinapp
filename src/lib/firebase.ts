@@ -4,7 +4,12 @@ import * as firebaseAuth from 'firebase/auth';
 // RN-conditioned entry — Metro resolves this to the react-native build at runtime.
 import * as firebaseAuthRN from '@firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {getFirestore, Firestore} from 'firebase/firestore';
+import {
+  getFirestore,
+  initializeFirestore,
+  persistentLocalCache,
+  Firestore,
+} from 'firebase/firestore';
 import Config from 'react-native-config';
 
 const firebaseConfig = {
@@ -74,7 +79,18 @@ if (hasConfig) {
     auth = getAuth(app);
   }
 
-  db = getFirestore(app);
+  try {
+    db = initializeFirestore(app, {
+      localCache: persistentLocalCache(),
+    });
+    console.log('[kin] Firestore: persistentLocalCache enabled');
+  } catch (e) {
+    console.warn(
+      '[kin] Firestore persistentLocalCache unavailable — falling back to getFirestore',
+      e,
+    );
+    db = getFirestore(app);
+  }
 }
 
 export {app, auth, db};
