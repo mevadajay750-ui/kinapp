@@ -34,7 +34,6 @@ async function deleteCollectionInChunks(
   }
   const col = collection(db, 'users', uid, subcollection);
   // Page until empty — Firestore has no recursive client delete.
-  // eslint-disable-next-line no-constant-condition
   while (true) {
     const snap = await getDocs(query(col, limit(CHUNK)));
     if (snap.empty) {

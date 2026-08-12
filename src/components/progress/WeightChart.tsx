@@ -1,5 +1,5 @@
-import React, {useMemo} from 'react';
-import {StyleSheet, useWindowDimensions, View} from 'react-native';
+import React, {useMemo, useState} from 'react';
+import {LayoutChangeEvent, StyleSheet, View} from 'react-native';
 import Svg, {Circle, Line, Path, Text as SvgText} from 'react-native-svg';
 import {colors, spacing, typography} from '../../theme';
 import {Text} from '../Text';
@@ -17,7 +17,6 @@ type Props = {
   height?: number;
 };
 
-const H_PAD = spacing.lg; // matches Screen horizontal padding
 const PLOT_LEFT = 36;
 const PLOT_RIGHT = 44;
 const PLOT_TOP = 12;
@@ -30,15 +29,21 @@ export function WeightChart({
   goalKg,
   height = 200,
 }: Props) {
-  const {width: windowWidth} = useWindowDimensions();
-  const width = windowWidth - H_PAD * 2;
-  const plotW = width - PLOT_LEFT - PLOT_RIGHT;
+  const [width, setWidth] = useState(0);
+  const plotW = Math.max(width - PLOT_LEFT - PLOT_RIGHT, 0);
   const plotH = height - PLOT_TOP - PLOT_BOTTOM;
+
+  const onLayout = (e: LayoutChangeEvent) => {
+    const next = Math.round(e.nativeEvent.layout.width);
+    if (next > 0 && next !== width) {
+      setWidth(next);
+    }
+  };
 
   const empty = points.length < 2;
 
   const layout = useMemo(() => {
-    if (empty || points.length === 0) {
+    if (empty || points.length === 0 || width <= 0 || plotW <= 0) {
       return null;
     }
     const sorted = [...points].sort((a, b) => a.date.localeCompare(b.date));
@@ -47,8 +52,7 @@ export function WeightChart({
     const xSpan = Math.max(daysBetween(xStart, xEnd), 1);
 
     // Y from points + trend, padded 8% — never anchor at zero.
-    // Goal is included in the domain when it sits near the data so the
-    // line stays readable; far-away goals stay off-chart (verification 5).
+    // Goal is included when near the data; far-away goals stay off-chart.
     let yMin = Math.min(...sorted.map(p => p.kg));
     let yMax = Math.max(...sorted.map(p => p.kg));
     if (trend.length > 0) {
@@ -82,7 +86,6 @@ export function WeightChart({
         ? goalKg
         : null;
 
-    // Build trend path segments, breaking on gaps > 10 days.
     const sortedTrend = [...trend].sort((a, b) =>
       a.date.localeCompare(b.date),
     );
@@ -132,11 +135,11 @@ export function WeightChart({
       goalInDomain,
       segments,
     };
-  }, [empty, points, trend, goalKg, plotW, plotH]);
+  }, [empty, points, trend, goalKg, plotW, plotH, width]);
 
   if (empty) {
     return (
-      <View style={[styles.frame, {height, width}]}>
+      <View style={[styles.frame, {height}]} onLayout={onLayout}>
         <Text variant="caption" color="warmGray" style={styles.empty}>
           Log a few more weights and the shape of it will show up here.
         </Text>
@@ -144,8 +147,8 @@ export function WeightChart({
     );
   }
 
-  if (!layout) {
-    return null;
+  if (!layout || width <= 0) {
+    return <View style={{height}} onLayout={onLayout} />;
   }
 
   const {
@@ -165,7 +168,7 @@ export function WeightChart({
   const captionFont = typography.caption.fontFamily ?? 'Inter-Regular';
 
   return (
-    <View style={{width, height}}>
+    <View style={{width: '100%', height}} onLayout={onLayout}>
       <Svg width={width} height={height}>
         {goalInDomain != null ? (
           <>
@@ -264,6 +267,7 @@ export function WeightChart({
 
 const styles = StyleSheet.create({
   frame: {
+    width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.lg,
